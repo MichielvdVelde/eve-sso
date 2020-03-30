@@ -1,0 +1,33 @@
+{
+  "name": "eve-sso",
+  "version": "0.0.1",
+  "description": "Eve Online Single Sign On (SSO)",
+  "main": "./dist/index.js",
+  "author": "Michiel van der Velde <michiel@michielvdvelde.nl>",
+  "homepage": "http://github.com/MichielvdVelde/eve-sso",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MichielvdVelde/eve-sso.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "keywords": [
+    "eve",
+    "online",
+    "sso",
+    "esi"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bent": "^7.0.1",
+    "@types/form-urlencoded": "^2.0.1"
+  },
+  "dependencies": {
+    "bent": "^7.1.2",
+    "form-urlencoded": "^4.1.3"
+  }
+}
