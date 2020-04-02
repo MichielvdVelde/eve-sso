@@ -8,6 +8,13 @@ import formUrlEncoded from 'form-urlencoded'
 
 const { name, version, homepage } = require('../package')
 
+export interface Response {
+  access_token: string,
+  expires_in: number,
+  token_type: string,
+  refresh_token: string
+}
+
 export interface SingleSignOnOptions {
   endpoint?: string
   userAgent?: string,
@@ -24,7 +31,7 @@ export default class SingleSignOn {
   #secretKey: string
   #authorization: string
   #host: string
-  #request: bent.RequestFunction<bent.Json>
+  #request: bent.RequestFunction<Response>
 
   public constructor (
     clientId: string,
@@ -46,7 +53,7 @@ export default class SingleSignOn {
 
     this.#authorization = Buffer.from(`${this.clientId}:${this.#secretKey}`).toString('base64')
     this.#host = parse(this.endpoint).hostname
-    this.#request = bent(this.endpoint, 'json', 'POST')
+    this.#request = bent(this.endpoint, 'json', 'POST') as bent.RequestFunction<Response>
   }
 
   /**
