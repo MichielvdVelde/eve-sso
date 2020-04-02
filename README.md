@@ -31,9 +31,9 @@ const SECRET = 'your secret'
 const CALLBACK_URI = 'http://localhost:3001/sso'
 
 const sso = new SingleSignOn(CLIENT_ID, SECRET, CALLBACK_URI, {
-  // both options are optional
-  endpoint: 'https://login.eveonline.com' // defaults to this
-  userAgent: 'my-user-agent'
+  endpoint: 'https://login.eveonline.com' // optional, defaults to this
+  userAgent: 'my-user-agent', // optional
+  scopes: [ 'scope1', 'scope2' ] // scopes to request
 })
 
 const app = new Koa()
@@ -42,7 +42,8 @@ const router = new Router()
 // Show a login redirect link
 router.get('/login', async ctx => {
   // The first argument is an optional state, which you can verify in the callback
-  // The second argument is a space-delimited string or string array of scopes to request
+  // The second argument is an optional space-delimited string or string array of scopes to request
+  // (which will overwrite the scopes given in the constructor options, if any)
   ctx.body = `<a href="${sso.getRedirectUrl('my-state')}">Login to Eve Online</a>`
 })
 
