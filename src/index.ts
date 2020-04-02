@@ -86,40 +86,34 @@ export default class SingleSignOn {
   }
 
   /**
-   * Get an access token from the authorization code.
-   * @param  code Authorization code
-   * @return      An object containing, among other things, the access token
-   * and refresh token
+   * Get an access token from an authorization code or refresh token.
+   * @param  code           The authorization code or refresh token
+   * @param  isRefreshToken Whether or not a refresh token is used
+   * @param  scopes         A subset of the specified scopes
+   * @return                An object containing, among other things,
+   * the access token and refresh token
    */
-  public async getAccessToken (code: string) {
-    const payload = {
-      grant_type: 'authorization_code',
-      code
-    }
+  public async getAccessToken (
+    code: string,
+    isRefreshToken?: boolean,
+    scopes?: string | string[]
+  ) {
+    let payload: any
 
-    return this.#request('/v2/oauth/token', formUrlEncoded(payload), {
-      Host: this.#host,
-      Authorization: `Basic ${this.#authorization}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': this.userAgent
-    })
-  }
+    if (!isRefreshToken) {
+      payload = {
+        grant_type: 'authorization_code',
+        code
+      }
+    } else {
+      payload = {
+        grant_type: 'refresh_token',
+        refresh_token: code
+      }
 
-  /**
-   * Get an access token from a refresh token.
-   * @param  refreshToken The refresh token
-   * @param  scopes       The scopes to request
-   * @return              An object containing, among other things, the access token
-   * and (potentially differing) refresh token
-   */
-  public async refreshToken (refreshToken: string, scopes?: string | string[]) {
-    const payload: any = {
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken
-    }
-
-    if (scopes) {
-      payload.scope = Array.isArray(scopes) ? scopes.join(' ') : scopes
+      if (scopes) {
+        payload.scope = Array.isArray(scopes) ? scopes.join(' ') : scopes
+      }
     }
 
     return this.#request('/v2/oauth/token', formUrlEncoded(payload), {
