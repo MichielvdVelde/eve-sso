@@ -22,7 +22,7 @@ export default class SingleSignOn {
   #secretKey: string
   #authorization: string
   #host: string
-  #request: bent.RequestFunction<bent.ValidResponse>
+  #request: bent.RequestFunction<bent.Json>
 
   public constructor (
     clientId: string,
@@ -39,7 +39,7 @@ export default class SingleSignOn {
 
     this.#authorization = Buffer.from(`${this.clientId}:${this.#secretKey}`).toString('base64')
     this.#host = parse(this.endpoint).hostname
-    this.#request = bent(this.endpoint, 'POST', 'json')
+    this.#request = bent(this.endpoint, 'json', 'POST')
   }
 
   /**
