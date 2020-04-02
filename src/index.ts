@@ -10,7 +10,8 @@ const { name, version, homepage } = require('../package')
 
 export interface SingleSignOnOptions {
   endpoint?: string
-  userAgent?: string
+  userAgent?: string,
+  scopes?: string | string[]
 }
 
 export default class SingleSignOn {
@@ -18,6 +19,7 @@ export default class SingleSignOn {
   public readonly callbackUri: string
   public readonly endpoint: string
   public readonly userAgent: string
+  public readonly scopes?: string[]
 
   #secretKey: string
   #authorization: string
@@ -37,6 +39,11 @@ export default class SingleSignOn {
     this.endpoint = opts.endpoint || 'https://login.eveonline.com'
     this.userAgent = opts.userAgent || `${name}@${version} - nodejs@${process.version} - ${homepage}`
 
+    if (opts.scopes) {
+      const { scopes } = opts
+      this.scopes = typeof scopes === 'string' ? scopes.split(' ') : scopes
+    }
+
     this.#authorization = Buffer.from(`${this.clientId}:${this.#secretKey}`).toString('base64')
     this.#host = parse(this.endpoint).hostname
     this.#request = bent(this.endpoint, 'json', 'POST')
@@ -49,11 +56,19 @@ export default class SingleSignOn {
    * @return        Redirect url
    */
   public getRedirectUrl (state?: string, scopes?: string | string[]) {
+    let scope: string = ''
+
+    if (scopes) {
+      scope = Array.isArray(scopes) ? scopes.join(' ') : scopes
+    } else if (this.scopes) {
+      scope = this.scopes.join(' ')
+    }
+
     const query: any = {
       response_type: 'code',
       redirect_uri: this.callbackUri,
       client_id: this.clientId,
-      scope: Array.isArray(scopes) ? scopes.join(' ') : (scopes || '')
+      scope
     }
 
     if (state) {
