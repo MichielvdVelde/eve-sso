@@ -23,8 +23,9 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "@types/bent": "^7.0.1",
-    "@types/form-urlencoded": "^2.0.1"
+    "@types/bent": "^7.0.2",
+    "@types/form-urlencoded": "^2.0.1",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
     "bent": "^7.1.2",
