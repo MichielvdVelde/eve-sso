@@ -26,7 +26,7 @@ export default class SingleSignOn {
   public readonly callbackUri: string
   public readonly endpoint: string
   public readonly userAgent: string
-  public readonly scopes?: string[]
+  public readonly scopes: string[] = []
 
   #authorization: string
   #host: string
