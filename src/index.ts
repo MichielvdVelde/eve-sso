@@ -28,7 +28,6 @@ export default class SingleSignOn {
   public readonly userAgent: string
   public readonly scopes?: string[]
 
-  #secretKey: string
   #authorization: string
   #host: string
   #request: bent.RequestFunction<Response>
@@ -40,7 +39,6 @@ export default class SingleSignOn {
     opts: SingleSignOnOptions = {}
   ) {
     this.clientId = clientId
-    this.#secretKey = secretKey
     this.callbackUri = callbackUri
 
     this.endpoint = opts.endpoint || 'https://login.eveonline.com'
@@ -51,7 +49,7 @@ export default class SingleSignOn {
       this.scopes = typeof scopes === 'string' ? scopes.split(' ') : scopes
     }
 
-    this.#authorization = Buffer.from(`${this.clientId}:${this.#secretKey}`).toString('base64')
+    this.#authorization = Buffer.from(`${this.clientId}:${secretKey}`).toString('base64')
     this.#host = parse(this.endpoint).hostname
     this.#request = bent(this.endpoint, 'json', 'POST') as bent.RequestFunction<Response>
   }
