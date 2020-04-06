@@ -70,7 +70,7 @@ export default class SingleSignOn {
    * @param  scopes Scopes to request
    * @return        Redirect url
    */
-  public getRedirectUrl (state?: string, scopes?: string | string[]) {
+  public getRedirectUrl (state: string, scopes?: string | string[]) {
     let scope: string = ''
 
     if (scopes) {
@@ -83,11 +83,8 @@ export default class SingleSignOn {
       response_type: 'code',
       redirect_uri: this.callbackUri,
       client_id: this.clientId,
-      scope
-    }
-
-    if (state) {
-      query.state = state
+      scope,
+      state
     }
 
     return `${this.endpoint}/v2/oauth/authorize?${stringify(query)}`

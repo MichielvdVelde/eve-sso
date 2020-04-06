@@ -43,7 +43,7 @@ const router = new Router()
 
 // Show a login redirect link
 router.get('/login', async ctx => {
-  // The first argument is an optional state, which you can verify in the callback
+  // The first argument is a required state, which you can verify in the callback
   // The second argument is an optional space-delimited string or string array of scopes to request
   // (which will overwrite the scopes given in the constructor options, if any)
   ctx.body = `<a href="${sso.getRedirectUrl('my-state')}">Login to Eve Online</a>`
