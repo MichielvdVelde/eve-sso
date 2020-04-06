@@ -9,6 +9,8 @@ Supports defining scopes as well. For now, please refer to the source code
 or the example for more information on how to use this module (documentation
 is forthcoming).
 
+The received access token is automatically verified as well.
+
 Before using the module you must create an application in the
 [Eve Online developers section](https://developers.eveonline.com/). This will
 give you the required client ID and secret.
@@ -31,7 +33,7 @@ const SECRET = 'your secret'
 const CALLBACK_URI = 'http://localhost:3001/sso'
 
 const sso = new SingleSignOn(CLIENT_ID, SECRET, CALLBACK_URI, {
-  endpoint: 'https://login.eveonline.com' // optional, defaults to this
+  endpoint: 'https://login.eveonline.com', // optional, defaults to this
   userAgent: 'my-user-agent', // optional
   scopes: [ 'scope1', 'scope2' ] // scopes to request
 })
@@ -55,9 +57,6 @@ router.get('/sso', async ctx => {
 
   // Swap the one-time code for an access token
   const info = await sso.getAccessToken(code)
-  
-  // NOTE: this would be the place to verify the access token JWT (left out
-  // of this example for the sake of brevity)
 
   // Usually you'd want to store the access token
   // as well as the refresh token
