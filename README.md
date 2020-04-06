@@ -17,6 +17,12 @@ give you the required client ID and secret.
 
 [See the developer documentation for more information](https://docs.esi.evetech.net/docs/sso/).
 
+## Install
+
+```
+npm i eve-sso [--save]
+```
+
 ## Example
 
 A small example using koa.
