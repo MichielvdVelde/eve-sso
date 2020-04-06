@@ -5,6 +5,8 @@ import { parse } from 'url'
 
 import bent from 'bent'
 import formUrlEncoded from 'form-urlencoded'
+import jwt from 'jsonwebtoken'
+import jwksClient from 'jwks-rsa'
 
 const { name, version, homepage } = require('../package')
 
@@ -27,6 +29,7 @@ export default class SingleSignOn {
   public readonly endpoint: string
   public readonly userAgent: string
   public readonly scopes: string[] = []
+  public readonly jwksClient: jwksClient.JwksClient
 
   #authorization: string
   #host: string
@@ -52,6 +55,13 @@ export default class SingleSignOn {
     this.#authorization = Buffer.from(`${this.clientId}:${secretKey}`).toString('base64')
     this.#host = parse(this.endpoint).hostname
     this.#request = bent(this.endpoint, 'json', 'POST') as bent.RequestFunction<Response>
+
+    this.jwksClient = jwksClient({
+      jwksUri: `${this.endpoint}/oauth/jwks`,
+      requestHeaders: {
+        'User-Agent': this.userAgent
+      }
+    })
   }
 
   /**
@@ -114,11 +124,41 @@ export default class SingleSignOn {
       }
     }
 
-    return this.#request('/v2/oauth/token', formUrlEncoded(payload), {
+    const reply = await this.#request('/v2/oauth/token', formUrlEncoded(payload), {
       Host: this.#host,
       Authorization: `Basic ${this.#authorization}`,
       'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': this.userAgent
+    })
+
+    await this.validateAccessToken(reply.access_token)
+
+    return reply
+  }
+
+  public async validateAccessToken (
+    accessToken: string
+  ): Promise<void> {
+    const decoded = jwt.decode(accessToken, {
+      complete: true
+    }) as { [key: string]: any }
+    const { kid } = decoded.header
+    const key = await this.getSigningKey(kid)
+
+    await jwt.verify(accessToken, key, {
+      issuer: [ this.endpoint, this.#host ]
+    })
+  }
+
+  private async getSigningKey (kid: string) {
+    return new Promise<string>((resolve, reject) => {
+      this.jwksClient.getSigningKey(kid, (err, key) => {
+        if (err) {
+          return reject(err)
+        }
+
+        resolve(key.getPublicKey())
+      })
     })
   }
 }
