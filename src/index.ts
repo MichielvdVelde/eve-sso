@@ -142,8 +142,23 @@ export default class SingleSignOn {
     const { kid } = decoded.header
     const key = await this.getSigningKey(kid)
 
-    await jwt.verify(accessToken, key, {
-      issuer: [ this.endpoint, this.#host ]
+    await this.verifyToken(accessToken, key)
+  }
+
+  private async verifyToken (
+    accessToken: string,
+    key: string
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      jwt.verify(accessToken, key, {
+        issuer: [ this.endpoint, this.#host ]
+      }, err => {
+        if (err) {
+          return reject(err)
+        }
+
+        resolve()
+      })
     })
   }
 
