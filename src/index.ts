@@ -27,12 +27,11 @@ export default class SingleSignOn {
   public readonly clientId: string
   public readonly callbackUri: string
   public readonly endpoint: string
+  public readonly host: string
   public readonly userAgent: string
   public readonly scopes: string[] = []
   public readonly jwksClient: jwksClient.JwksClient
 
-  #authorization: string
-  #host: string
   #request: bent.RequestFunction<Response>
 
   public constructor (
@@ -52,9 +51,15 @@ export default class SingleSignOn {
       this.scopes = typeof scopes === 'string' ? scopes.split(' ') : scopes
     }
 
-    this.#authorization = Buffer.from(`${this.clientId}:${secretKey}`).toString('base64')
-    this.#host = parse(this.endpoint).hostname
-    this.#request = bent(this.endpoint, 'json', 'POST') as bent.RequestFunction<Response>
+    const authorization = Buffer.from(`${this.clientId}:${secretKey}`).toString('base64')
+    this.host = parse(this.endpoint).hostname
+
+    this.#request = bent(this.endpoint, 'json', 'POST', {
+      Host: this.host,
+      Authorization: `Basic ${authorization}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': this.userAgent
+    }) as bent.RequestFunction<Response>
 
     this.jwksClient = jwksClient({
       jwksUri: `${this.endpoint}/oauth/jwks`,
@@ -102,7 +107,7 @@ export default class SingleSignOn {
     code: string,
     isRefreshToken?: boolean,
     scopes?: string | string[]
-  ) {
+  ): Promise<Response> {
     let payload: any
 
     if (!isRefreshToken) {
@@ -121,12 +126,10 @@ export default class SingleSignOn {
       }
     }
 
-    const reply = await this.#request('/v2/oauth/token', formUrlEncoded(payload), {
-      Host: this.#host,
-      Authorization: `Basic ${this.#authorization}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': this.userAgent
-    })
+    const reply = await this.#request(
+      '/v2/oauth/token',
+      formUrlEncoded(payload)
+    )
 
     await this.validateAccessToken(reply.access_token)
 
@@ -151,7 +154,7 @@ export default class SingleSignOn {
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       jwt.verify(accessToken, key, {
-        issuer: [ this.endpoint, this.#host ]
+        issuer: [ this.endpoint, this.host ]
       }, err => {
         if (err) {
           return reject(err)
