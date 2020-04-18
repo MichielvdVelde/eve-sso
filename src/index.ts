@@ -10,8 +10,21 @@ import jwksClient from 'jwks-rsa'
 
 const { name, version, homepage } = require('../package')
 
+export interface AccessToken {
+  scp: string | string[],
+  jti: string,
+  kid: string,
+  sub: string,
+  azp: string,
+  name: string,
+  owner: string,
+  exp: number,
+  iss: string
+}
+
 export interface Response {
   access_token: string,
+  decoded_access_token: AccessToken,
   expires_in: number,
   token_type: string,
   refresh_token: string
@@ -131,18 +144,20 @@ export default class SingleSignOn {
       formUrlEncoded(payload)
     )
 
-    await this.validateAccessToken(reply.access_token)
+    reply.decoded_access_token = jwt.decode(reply.access_token) as AccessToken
+
+    await this.validateAccessToken(
+      reply.access_token,
+      reply.decoded_access_token.kid
+    )
 
     return reply
   }
 
   public async validateAccessToken (
-    accessToken: string
+    accessToken: string,
+    kid: string
   ): Promise<void> {
-    const decoded = jwt.decode(accessToken, {
-      complete: true
-    }) as { [key: string]: any }
-    const { kid } = decoded.header
     const key = await this.getSigningKey(kid)
 
     return new Promise((resolve, reject) => {
