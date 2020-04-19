@@ -27,7 +27,10 @@ export interface Response {
   decoded_access_token: AccessToken,
   expires_in: number,
   token_type: string,
-  refresh_token: string
+  refresh_token: string,
+  headers: {
+    [key: string]: any
+  }
 }
 
 export interface SingleSignOnOptions {
@@ -45,7 +48,7 @@ export default class SingleSignOn {
   public readonly scopes: string[] = []
   public readonly jwksClient: jwksClient.JwksClient
 
-  #request: bent.RequestFunction<Response>
+  #request: bent.RequestFunction<bent.NodeResponse>
 
   public constructor (
     clientId: string,
@@ -67,12 +70,12 @@ export default class SingleSignOn {
     const authorization = Buffer.from(`${this.clientId}:${secretKey}`).toString('base64')
     this.host = parse(this.endpoint).hostname
 
-    this.#request = bent(this.endpoint, 'json', 'POST', {
+    this.#request = bent(this.endpoint, 'POST', {
       Host: this.host,
       Authorization: `Basic ${authorization}`,
       'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': this.userAgent
-    }) as bent.RequestFunction<Response>
+    }) as bent.RequestFunction<bent.NodeResponse>
 
     this.jwksClient = jwksClient({
       jwksUri: `${this.endpoint}/oauth/jwks`,
@@ -144,14 +147,17 @@ export default class SingleSignOn {
       formUrlEncoded(payload)
     )
 
-    reply.decoded_access_token = jwt.decode(reply.access_token) as AccessToken
+    const body: Response = await (<any>reply).json()
+
+    body.headers = reply.headers
+    body.decoded_access_token = jwt.decode(body.access_token) as AccessToken
 
     await this.validateAccessToken(
-      reply.access_token,
-      reply.decoded_access_token.kid
+      body.access_token,
+      body.decoded_access_token.kid
     )
 
-    return reply
+    return body
   }
 
   public async validateAccessToken (
