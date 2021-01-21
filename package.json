@@ -32,6 +32,6 @@
     "bent": "^7.3.12",
     "form-urlencoded": "^4.2.1",
     "jsonwebtoken": "^8.5.1",
-    "jwks-rsa": "^1.12.0"
+    "jwks-rsa": "^1.12.2"
   }
 }
