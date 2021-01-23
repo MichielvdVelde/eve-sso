@@ -19,7 +19,7 @@ give you the required client ID and secret.
 
 For a more complete module which includes account, character, and token management
 as well as the ability to make unauthenticated and authenticated requests to ESI,
-see my module [eve-esi-clien](https://github.com/MichielvdVelde/eve-esi).
+see my module [eve-esi-client](https://github.com/MichielvdVelde/eve-esi).
 
 ## Install
 
