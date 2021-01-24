@@ -1,7 +1,6 @@
 'use strict'
 
 import { stringify } from 'querystring'
-import { parse } from 'url'
 
 import bent from 'bent'
 import formUrlEncoded from 'form-urlencoded'
