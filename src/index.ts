@@ -35,8 +35,7 @@ export interface Response {
 
 export interface SingleSignOnOptions {
   endpoint?: string
-  userAgent?: string,
-  scopes?: string | string[]
+  userAgent?: string
 }
 
 export default class SingleSignOn {
@@ -45,7 +44,6 @@ export default class SingleSignOn {
   public readonly endpoint: string
   public readonly host: string
   public readonly userAgent: string
-  public readonly scopes: string[] = []
   public readonly jwksClient: jwksClient.JwksClient
 
   #request: bent.RequestFunction<bent.NodeResponse>
@@ -61,11 +59,6 @@ export default class SingleSignOn {
 
     this.endpoint = opts.endpoint || 'https://login.eveonline.com'
     this.userAgent = opts.userAgent || `${name}@${version} - nodejs@${process.version} - ${homepage}`
-
-    if (opts.scopes) {
-      const { scopes } = opts
-      this.scopes = typeof scopes === 'string' ? scopes.split(' ') : scopes
-    }
 
     const authorization = Buffer.from(`${this.clientId}:${secretKey}`).toString('base64')
     this.host = parse(this.endpoint).hostname
@@ -96,8 +89,6 @@ export default class SingleSignOn {
 
     if (scopes) {
       scope = Array.isArray(scopes) ? scopes.join(' ') : scopes
-    } else if (this.scopes) {
-      scope = this.scopes.join(' ')
     }
 
     const query: any = {
