@@ -169,7 +169,7 @@ export default class SingleSignOn {
     })
   }
 
-  public async getSigningKey (kid: string) {
+  private async getSigningKey (kid: string) {
     return new Promise<string>((resolve, reject) => {
       this.jwksClient.getSigningKey(kid, (err, key) => {
         if (err) {
