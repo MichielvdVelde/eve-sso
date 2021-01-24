@@ -61,7 +61,7 @@ export default class SingleSignOn {
     this.userAgent = opts.userAgent || `${name}@${version} - nodejs@${process.version} - ${homepage}`
 
     const authorization = Buffer.from(`${this.clientId}:${secretKey}`).toString('base64')
-    this.host = parse(this.endpoint).hostname
+    this.host = new URL(this.endpoint).hostname
 
     this.#request = bent(this.endpoint, 'POST', {
       Host: this.host,
