@@ -5,21 +5,12 @@ Once the user/character is authenticated, you can use the access token to make
 authenticated requests to [ESI](https://docs.esi.evetech.net/docs/esi_introduction.html)
 (not included in this module).
 
-Supports defining scopes as well. For now, please refer to the source code
-or the example for more information on how to use this module (documentation
-is forthcoming).
-
-The received access token is automatically verified as well.
-
-Before using the module you must create an application in the
-[Eve Online developers section](https://developers.eveonline.com/). This will
-give you the required client ID and secret.
-
-[See the developer documentation for more information](https://docs.esi.evetech.net/docs/sso/).
-
 For a more complete module which includes account, character, and token management
 as well as the ability to make unauthenticated and authenticated requests to ESI,
 see my module [eve-esi-client](https://github.com/MichielvdVelde/eve-esi).
+
+> See the [Eve Online developer documentation](https://docs.esi.evetech.net/docs/sso/)
+> for more information
 
 ## Install
 
@@ -28,6 +19,10 @@ npm i eve-sso [--save]
 ```
 
 ## Example
+
+Before using the module you must create an application in the
+[Eve Online developers section](https://developers.eveonline.com/). This will
+give you the required client ID and secret.
 
 A small example using koa.
 
@@ -44,8 +39,7 @@ const CALLBACK_URI = 'http://localhost:3001/sso'
 
 const sso = new SingleSignOn(CLIENT_ID, SECRET, CALLBACK_URI, {
   endpoint: 'https://login.eveonline.com', // optional, defaults to this
-  userAgent: 'my-user-agent', // optional
-  scopes: [ 'scope1', 'scope2' ] // scopes to request
+  userAgent: 'my-user-agent' // optional
 })
 
 const app = new Koa()
