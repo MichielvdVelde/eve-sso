@@ -140,44 +140,23 @@ export default class SingleSignOn {
     const body: Response = await (<any>reply).json()
 
     body.headers = reply.headers
-    body.decoded_access_token = jwt.decode(body.access_token) as AccessToken
 
-    await this.validateAccessToken(
-      body.access_token,
-      body.decoded_access_token.kid
-    )
+    body.decoded_access_token = await new Promise<AccessToken>((resolve, reject) => {
+      jwt.verify(body.access_token, this.getKey.bind(this), {
+        issuer: [ this.endpoint, this.host ]
+      }, (err, decoded) => {
+        if (err) return reject(err)
+        resolve(decoded as AccessToken)
+      })
+    })
 
     return body
   }
 
-  public async validateAccessToken (
-    accessToken: string,
-    kid: string
-  ): Promise<void> {
-    const key = await this.getSigningKey(kid)
-
-    return new Promise((resolve, reject) => {
-      jwt.verify(accessToken, key, {
-        issuer: [ this.endpoint, this.host ]
-      }, err => {
-        if (err) {
-          return reject(err)
-        }
-
-        resolve()
-      })
-    })
-  }
-
-  private async getSigningKey (kid: string) {
-    return new Promise<string>((resolve, reject) => {
-      this.jwksClient.getSigningKey(kid, (err, key) => {
-        if (err) {
-          return reject(err)
-        }
-
-        resolve(key.getPublicKey())
-      })
+  private getKey (header: any, callback: Function) {
+    this.jwksClient.getSigningKey(header.kid, (err, key) => {
+      if (err) return callback(err)
+      callback(null, key.getPublicKey())
     })
   }
 }
