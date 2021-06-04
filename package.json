@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "bent": "^7.3.12",
-    "form-urlencoded": "^4.5.0",
+    "form-urlencoded": "^6.0.4",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^1.12.3"
   }
