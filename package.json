@@ -1,6 +1,6 @@
 {
   "name": "eve-sso",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Eve Online Single Sign On (SSO)",
   "main": "./dist/index.js",
   "author": "Michiel van der Velde <michiel@michielvdvelde.nl>",
