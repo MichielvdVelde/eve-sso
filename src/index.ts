@@ -1,15 +1,16 @@
-'use strict'
-
-import { stringify } from 'querystring'
-
-import bent from 'bent'
+import fetch from 'node-fetch'
 import formUrlEncoded from 'form-urlencoded'
 import jwt from 'jsonwebtoken'
-import jwksClient from 'jwks-rsa'
+import jwks from 'jwks-rsa'
 
 const { name, version, homepage } = require('../package')
 
-export interface AccessToken {
+export type Options = {
+  endpoint?: string,
+  userAgent?: string,
+}
+
+export type AccessToken = {
   scp: string | string[],
   jti: string,
   kid: string,
@@ -21,21 +22,15 @@ export interface AccessToken {
   iss: string
 }
 
-export interface Response {
+export type Response = {
   access_token: string,
-  decoded_access_token: AccessToken,
-  expires_in: number,
   token_type: string,
   refresh_token: string,
-  headers: {
-    [key: string]: any
-  }
+  expires_in: number,
+  decoded_access_token: AccessToken,
 }
 
-export interface SingleSignOnOptions {
-  endpoint?: string
-  userAgent?: string
-}
+const ENDPOINT = 'https://login.eveonline.com'
 
 export default class SingleSignOn {
   public readonly clientId: string
@@ -43,33 +38,28 @@ export default class SingleSignOn {
   public readonly endpoint: string
   public readonly host: string
   public readonly userAgent: string
-  public readonly jwksClient: jwksClient.JwksClient
 
-  #request: bent.RequestFunction<bent.NodeResponse>
+  #authorization: string
+  #jwks: jwks.JwksClient
 
-  public constructor (
+  public constructor(
     clientId: string,
     secretKey: string,
     callbackUri: string,
-    opts: SingleSignOnOptions = {}
+    {
+      endpoint,
+      userAgent,
+    }: Options = {}
   ) {
     this.clientId = clientId
     this.callbackUri = callbackUri
+    this.#authorization = Buffer.from(`${clientId}:${secretKey}`).toString('base64')
 
-    this.endpoint = opts.endpoint || 'https://login.eveonline.com'
-    this.userAgent = opts.userAgent || `${name}@${version} - nodejs@${process.version} - ${homepage}`
-
-    const authorization = Buffer.from(`${this.clientId}:${secretKey}`).toString('base64')
+    this.endpoint = endpoint ?? ENDPOINT
     this.host = new URL(this.endpoint).hostname
+    this.userAgent = userAgent ?? `${name}@${version} - nodejs@${process.version} - ${homepage}`
 
-    this.#request = bent(this.endpoint, 'POST', {
-      Host: this.host,
-      Authorization: `Basic ${authorization}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': this.userAgent
-    }) as bent.RequestFunction<bent.NodeResponse>
-
-    this.jwksClient = jwksClient({
+    this.#jwks = jwks({
       jwksUri: `${this.endpoint}/oauth/jwks`,
       requestHeaders: {
         'User-Agent': this.userAgent
@@ -77,84 +67,68 @@ export default class SingleSignOn {
     })
   }
 
-  /**
-   * Get a redirect url.
-   * @param  state  State string
-   * @param  scopes Scopes to request
-   * @return        Redirect url
-   */
-  public getRedirectUrl (state: string, scopes?: string | string[]) {
-    let scope: string = ''
+  public getRedirectUrl(state: string, scopes?: string | string[]): string {
+    let scope = ''
 
     if (scopes) {
-      scope = Array.isArray(scopes) ? scopes.join(' ') : scopes
+      if (Array.isArray(scopes)) {
+        scope = scopes.join(' ')
+      } else {
+        scope = scopes
+      }
     }
 
-    const query: any = {
+    const search = new URLSearchParams({
       response_type: 'code',
       redirect_uri: this.callbackUri,
       client_id: this.clientId,
       scope,
       state
-    }
+    })
 
-    return `${this.endpoint}/v2/oauth/authorize?${stringify(query)}`
+    return `${this.endpoint}/v2/oauth/authorize?${search.toString()}`
   }
 
-  /**
-   * Get an access token from an authorization code or refresh token.
-   * @param  code           The authorization code or refresh token
-   * @param  isRefreshToken Whether or not a refresh token is used
-   * @param  scopes         A subset of the specified scopes
-   * @return                An object containing, among other things,
-   * the access token and refresh token
-   */
-  public async getAccessToken (
-    code: string,
-    isRefreshToken?: boolean,
-    scopes?: string | string[]
-  ): Promise<Response> {
-    let payload: any
-
-    if (!isRefreshToken) {
-      payload = {
-        grant_type: 'authorization_code',
-        code
-      }
-    } else {
-      payload = {
-        grant_type: 'refresh_token',
-        refresh_token: code
-      }
-
-      if (scopes) {
-        payload.scope = Array.isArray(scopes) ? scopes.join(' ') : scopes
-      }
+  public async getAccessToken(code: string, isRefreshToken = false) {
+    const payload = !isRefreshToken ? {
+      grant_type: 'authorization_code',
+      code
+    } : {
+      grant_type: 'refresh_token',
+      refresh_token: code,
     }
 
-    const reply = await this.#request(
-      '/v2/oauth/token',
-      formUrlEncoded(payload)
-    )
+    const response = await fetch(`${this.endpoint}/v2/oauth/token`, {
+      method: 'POST',
+      body: formUrlEncoded(payload),
+      headers: {
+        Host: this.host,
+        Authorization: `Basic ${this.#authorization}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': this.userAgent,
+      }
+    })
 
-    const body: Response = await (<any>reply).json()
+    if (!response.ok) {
+      throw new Error(`Got status code ${response.status}`)
+    }
 
-    body.headers = reply.headers
+    const data = await response.json() as Response
 
-    body.decoded_access_token = await new Promise<AccessToken>((resolve, reject) => {
-      jwt.verify(body.access_token, this.getKey.bind(this), {
-        issuer: [ this.endpoint, this.host ]
+    data.decoded_access_token = await new Promise<AccessToken>((resolve, reject) => {
+      jwt.verify(data.access_token, this.getKey.bind(this), {
+        issuer: [this.endpoint, this.host]
       }, (err, decoded) => {
         if (err) return reject(err)
         resolve(decoded as AccessToken)
       })
     })
 
-    return body
+    return data
   }
 
-  private getKey (header: any, callback: Function) {
-    this.jwksClient.getSigningKey(header.kid, (err, key) => {
+  private getKey(header: any, callback: Function) {
+    this.#jwks.getSigningKey(header.kid, (err, key) => {
       if (err) return callback(err)
       callback(null, key.getPublicKey())
     })
