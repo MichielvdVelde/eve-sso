@@ -1,6 +1,6 @@
 {
   "name": "eve-sso",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0",
   "description": "Eve Online Single Sign On (SSO)",
   "main": "./dist/index.js",
   "author": "Michiel van der Velde <michiel@michielvdvelde.nl>",
@@ -23,13 +23,13 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "form-urlencoded": "^6.0.4",
+    "form-urlencoded": "^6.0.5",
     "jsonwebtoken": "^8.5.1",
-    "jwks-rsa": "^2.0.4",
-    "node-fetch": "^2.6.1"
+    "jwks-rsa": "^2.0.5",
+    "node-fetch": "^3.1.0"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^8.5.4",
-    "@types/node-fetch": "^2.5.12"
+    "@types/jsonwebtoken": "^8.5.6",
+    "@types/node-fetch": "^3.0.3"
   }
 }
