@@ -1,7 +1,7 @@
-import fetch from 'node-fetch'
+import fetch, { Response as FetchResponse } from 'node-fetch';
 import formUrlEncoded from 'form-urlencoded'
-import jwt from 'jsonwebtoken'
-import jwks from 'jwks-rsa'
+import jwt, { SigningKeyCallback, JwtHeader } from 'jsonwebtoken'
+import jwks, { SigningKey } from 'jwks-rsa'
 
 const { name, version, homepage } = require('../package')
 
@@ -28,6 +28,15 @@ export type Response = {
   refresh_token: string,
   expires_in: number,
   decoded_access_token: AccessToken,
+}
+
+export class HTTPFetchError extends Error {
+  response: FetchResponse;
+
+	constructor(response: FetchResponse) {
+		super(`HTTP Error Response: ${response.status} ${response.statusText}`);
+		this.response = response;
+	}
 }
 
 const ENDPOINT = 'https://login.eveonline.com'
@@ -110,27 +119,51 @@ export default class SingleSignOn {
     })
 
     if (!response.ok) {
-      throw new Error(`Got status code ${response.status}`)
+      throw new HTTPFetchError(response);
     }
 
-    const data = await response.json() as Response
+    const data = await response.json() as Response;
 
     data.decoded_access_token = await new Promise<AccessToken>((resolve, reject) => {
-      jwt.verify(data.access_token, this.getKey.bind(this), {
-        issuer: [this.endpoint, this.host]
-      }, (err, decoded) => {
-        if (err) return reject(err)
-        resolve(decoded as AccessToken)
-      })
+      try {
+        jwt.verify(
+          data.access_token,
+          this.getKey.bind(this),
+          {
+            issuer: [this.endpoint, this.host],
+            audience: "EVE Online",
+          },
+          (err, decoded) => {
+            if (err) {
+              console.log("Error in jwt.verify: ", err.message);
+              reject(err);
+            } else {
+              resolve(decoded as AccessToken)
+            }
+          }
+        )
+      } catch (error) {
+        reject(error);
+      }
     })
 
     return data
+
   }
 
-  private getKey(header: any, callback: Function) {
-    this.#jwks.getSigningKey(header.kid, (err, key) => {
-      if (err) return callback(err)
-      callback(null, key.getPublicKey())
-    })
+  private getKey(header: JwtHeader, callback: SigningKeyCallback) {
+    try {
+      this.#jwks.getSigningKey(header.kid, function(err, key: SigningKey) {
+        try {
+          const signingKey = key.getPublicKey();
+          callback(null, signingKey);
+        } catch (error) {
+          callback(error);
+        }
+      });
+    } catch (error) {
+      callback(error);
+    }
   }
+
 }

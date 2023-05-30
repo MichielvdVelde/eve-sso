@@ -1,5 +1,10 @@
 # Eve Single Sign On
 
+Version 2.0.1
+- Downgraded node-fetch to v2 for better Typescript compatibilily (CJS not ESM)
+- Added "audience" to the JWT verification
+- Added extra exception handling to JWT verification (authorisation calls at downtime used to crash)
+
 [Eve Online](https://eveonline.com) Single Sign On (SSO) module for node.js.
 Once the user/character is authenticated, you can use the access token to make
 authenticated requests to [ESI](https://docs.esi.evetech.net/docs/esi_introduction.html)
