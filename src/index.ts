@@ -1,7 +1,7 @@
 import fetch, { Response as FetchResponse } from 'node-fetch';
 import formUrlEncoded from 'form-urlencoded'
 import jwt, { SigningKeyCallback, JwtHeader } from 'jsonwebtoken'
-import jwks, { SigningKey } from 'jwks-rsa'
+import jwks from 'jwks-rsa'
 
 const { name, version, homepage } = require('../package')
 
@@ -152,18 +152,13 @@ export default class SingleSignOn {
   }
 
   private getKey(header: JwtHeader, callback: SigningKeyCallback) {
-    try {
-      this.#jwks.getSigningKey(header.kid, function(err, key: SigningKey) {
-        try {
-          const signingKey = key.getPublicKey();
-          callback(null, signingKey);
-        } catch (error) {
-          callback(error);
-        }
+    this.#jwks.getSigningKey(header.kid)
+      .then(key => {
+        const signingKey = key.getPublicKey();
+        callback(null, signingKey);
+      })
+      .catch(error => {
+        callback(error as Error);
       });
-    } catch (error) {
-      callback(error);
-    }
   }
-
 }
